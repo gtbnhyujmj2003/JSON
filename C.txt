@@ -1,0 +1,85 @@
+你目前拿到的是一個 Postman Collection 的 JSON 檔案（名為 媒合.postman_collection.json），裡面包含了三個 API 定義，分別是：
+
+代付列表 - /api/withdraw/list
+
+代收列表 - /api/deposit/list
+
+通道列表 - /api/all-payment/channel
+
+你的需求簡單整理：
+「把 list（或網址）中的參數拆出來，用 for 迴圈處理成多組資料，再組成 JSON 輸出。」
+
+我推測你的意思是：
+
+從這些 API 的 formdata 裡提取參數（例如：account、start_at、end_at、page...）
+
+將這些參數組成字典（dict）或 JSON
+
+多次處理（比如 page=1~N）時用 for 迴圈跑
+
+最後輸出為 JSON 檔或 Python 字典
+
+✅ 實作方式（Python 示範）
+這裡以「代收列表」API 為例（你可改成任何一個），生成不同 page 的查詢 JSON：
+
+python
+複製
+編輯
+import json
+
+# 範例參數
+base_payload = {
+    "account": "admin",
+    "start_at": "2025-04-01 00:00:00",
+    "end_at": "2025-05-01 00:00:00",
+    "limit": "15",
+    # "payment_id": ""  # 可以忽略掉 disabled 欄位
+}
+
+# 動態生成 page=1~5 的 payload
+payload_list = []
+for page in range(1, 6):
+    payload = base_payload.copy()
+    payload["page"] = str(page)
+    payload_list.append(payload)
+
+# 輸出為 JSON
+with open("generated_payloads.json", "w", encoding="utf-8") as f:
+    json.dump(payload_list, f, indent=2, ensure_ascii=False)
+
+print("✅ 已產生 5 筆查詢資料到 generated_payloads.json")
+🧠 如果你是想「從 JSON 檔中自動抽出所有 API 的參數」，可以這樣做：
+python
+複製
+編輯
+with open("媒合.postman_collection.json", "r", encoding="utf-8") as f:
+    data = json.load(f)
+
+payloads = []
+
+for item in data["item"]:
+    api_name = item["name"]
+    formdata = item["request"]["body"].get("formdata", [])
+    payload = {
+        d["key"]: d.get("value", "") for d in formdata if not d.get("disabled", False)
+    }
+    payloads.append({
+        "api": api_name,
+        "url": item["request"]["url"]["raw"],
+        "payload": payload
+    })
+
+print(json.dumps(payloads, indent=2, ensure_ascii=False))
+這段程式碼會將三個 API 的基本參數抽出來，組成清楚的 JSON 陣列。
+
+如果你有特別想針對哪個 API 做資料組裝或改變參數（例如迴圈跑某個變數、或拼接為網址），也可以說明，我幫你客製化那段程式碼。要不要我直接幫你包一個完整 .py 或 .ipynb 工具呢？
+
+
+
+
+
+
+
+
+
+詢問 ChatGPT
