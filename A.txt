@@ -1,0 +1,75 @@
+Python 示範：把字典內容顯示出來（網頁 or CLI）
+1. 字典資料範例
+你收到的資料可能長這樣：
+
+python
+複製
+編輯
+data = {
+    "account": "admin",
+    "start_at": "2025-04-01 00:00:00",
+    "end_at": "2025-05-01 00:00:00",
+    "page": "2",
+    "limit": "15"
+}
+2. 用 for 迴圈顯示（適用 CLI / print / debug）
+python
+複製
+編輯
+for key, value in data.items():
+    print(f"{key} : {value}")
+輸出會是：
+
+yaml
+複製
+編輯
+account : admin
+start_at : 2025-04-01 00:00:00
+end_at : 2025-05-01 00:00:00
+page : 2
+limit : 15
+3. 如果你是做網頁，可以用簡單 HTML 顯示：
+python
+複製
+編輯
+from flask import Flask, render_template_string
+
+app = Flask(__name__)
+
+@app.route("/")
+def show_data():
+    data = {
+        "account": "admin",
+        "start_at": "2025-04-01 00:00:00",
+        "end_at": "2025-05-01 00:00:00",
+        "page": "2",
+        "limit": "15"
+    }
+
+    html = """
+    <h2>資料內容</h2>
+    <ul>
+        {% for key, value in data.items() %}
+        <li><strong>{{ key }}</strong> : {{ value }}</li>
+        {% endfor %}
+    </ul>
+    """
+    return render_template_string(html, data=data)
+
+if __name__ == "__main__":
+    app.run(debug=True)
+➡️ 執行後打開 http://127.0.0.1:5000/，就會看到所有 key:value 顯示在網頁上。
+
+4. 如果你還要輸出為 JSON 檔：
+python
+複製
+編輯
+import json
+
+with open("output.json", "w", encoding="utf-8") as f:
+    json.dump(data, f, indent=2, ensure_ascii=False)
+✅ 小結
+項目	做法
+把 key:value 顯示出來	用 for key, value in data.items()
+網頁顯示	Flask + HTML 模板
+輸出成 JSON 檔	json.dump(data, ...)
