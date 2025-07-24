@@ -1,0 +1,79 @@
+✅ 最終流程
+對方電腦會傳資料給你（用明碼丟過來），可能是 URL-encoded 的 query string 或 form data，例如：
+
+perl
+複製
+編輯
+account=admin&start_at=2025-04-01+00%3A00%3A00&end_at=2025-05-01+00%3A00%3A00&page=2&limit=15
+你要解析這段字串成 JSON 格式（也就是 Python 字典）：
+
+json
+複製
+編輯
+{
+  "account": "admin",
+  "start_at": "2025-04-01 00:00:00",
+  "end_at": "2025-05-01 00:00:00",
+  "page": "2",
+  "limit": "15"
+}
+然後在網頁上顯示 key:value
+
+✅ Python + Flask 完整範例（前端貼上明碼後自動解析）
+python
+複製
+編輯
+from flask import Flask, request, render_template_string
+from urllib.parse import parse_qs
+
+app = Flask(__name__)
+
+HTML_FORM = """
+<h2>貼上資料（明碼）</h2>
+<form method="POST">
+    <textarea name="raw_data" rows="8" cols="80">{{ raw_data or '' }}</textarea><br>
+    <input type="submit" value="送出">
+</form>
+
+{% if parsed_data %}
+<h3>解析結果：</h3>
+<pre>{{ parsed_data | tojson(indent=2, ensure_ascii=False) }}</pre>
+{% endif %}
+"""
+
+@app.route("/", methods=["GET", "POST"])
+def index():
+    raw_data = ""
+    parsed_dict = {}
+
+    if request.method == "POST":
+        raw_data = request.form["raw_data"]
+        # 解析 URL-encoded 字串為字典
+        parsed_qs = parse_qs(raw_data)
+        # 只取第一個值（parse_qs 預設是 list）
+        parsed_dict = {k: v[0] if len(v) == 1 else v for k, v in parsed_qs.items()}
+
+    return render_template_string(HTML_FORM, raw_data=raw_data, parsed_data=parsed_dict)
+
+if __name__ == "__main__":
+    app.run(debug=True)
+✅ 使用方式：
+在瀏覽器貼上這類明碼：
+
+perl
+複製
+編輯
+account=admin&start_at=2025-04-01+00%3A00%3A00&end_at=2025-05-01+00%3A00%3A00&page=2&limit=15
+點擊送出，畫面下方就會以 JSON 格式漂亮地顯示 key:value！
+
+📌 補充：為何用 parse_qs
+urllib.parse.parse_qs() 是專門用來解析這種 application/x-www-form-urlencoded 格式的好幫手。
+
+它會把值存在 list 中，像這樣：
+
+python
+複製
+編輯
+parse_qs("account=admin&page=2")
+# {'account': ['admin'], 'page': ['2']}
+我們再幫你 .items() 整理成簡單版 JSON 就好！
