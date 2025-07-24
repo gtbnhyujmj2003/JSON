@@ -1,0 +1,84 @@
+了解，你的 replit 上有一段 Flask 程式，功能是：
+
+呼叫對方提供的 API（https://example.com/api/account），取得像 { "accountID": 2 } 這樣的資料。
+
+根據這個 ID 去你自己的資料庫撈使用者。
+
+回傳這筆使用者的資訊。
+
+✅ 根據你的補充，我幫你「改成把結果顯示在 /json_view 頁面上」：
+重點是：
+
+不是 return jsonify() 這次，
+
+而是顯示在 HTML 頁面中，像 key:value 的清單。
+
+✅ 修改後的程式碼
+python
+複製
+編輯
+from flask import Flask, render_template_string, request
+import requests
+# 假設你有 SQLAlchemy 的 User 模型
+from your_model import User  
+
+app = Flask(__name__)
+
+@app.route('/json_view')
+def json_view():
+    # 改成工程師實際給你的 API
+    external_api_url = 'https://example.com/api/account'
+
+    try:
+        # 假設是 GET，也可以改成 POST 看需求
+        response = requests.get(external_api_url)
+        data = response.json()  # 預期像 { "accountID": 2 }
+
+        account_id = data.get('accountID')
+        if not account_id:
+            return "accountID not found in response", 400
+
+        user = User.query.filter_by(id=account_id).first()
+        if not user:
+            return "User not found", 404
+
+        # 要顯示的資料
+        user_data = {
+            "accountID": user.id,
+            "username": user.username
+        }
+
+        # 用 HTML 顯示 key:value
+        html_template = """
+        <h2>使用者資訊 (JSON View)</h2>
+        <ul>
+        {% for key, value in user_data.items() %}
+            <li><strong>{{ key }}</strong>: {{ value }}</li>
+        {% endfor %}
+        </ul>
+        """
+
+        return render_template_string(html_template, user_data=user_data)
+
+    except Exception as e:
+        return f"Error: {str(e)}", 500
+✅ 使用方式
+在 Replit 上部署好 Flask 之後，打開 /json_view
+
+頁面會顯示像這樣的內容：
+
+yaml
+複製
+編輯
+使用者資訊 (JSON View)
+• accountID: 2  
+• username: piggy123
+✅ 額外建議
+如果工程師後來丟給你的是一大串 URL-encoded 的資料（不是 accountID: 2 這麼單純），你可以在 response.text 裡處理。
+
+想要完整 JSON 樣式（縮排、格式化）也可以改用：
+
+jinja2
+複製
+編輯
+<pre>{{ user_data | tojson(indent=2, ensure_ascii=False) }}</pre>
