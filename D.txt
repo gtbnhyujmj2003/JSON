@@ -1,0 +1,70 @@
+✅ 修正後版本（直接接收並顯示明碼資料）
+🔧 Flask 程式（主體邏輯）：
+python
+複製
+編輯
+from flask import Flask, request, render_template_string
+from urllib.parse import parse_qs
+
+app = Flask(__name__)
+
+@app.route("/json_view", methods=["GET", "POST"])
+def json_view():
+    raw_data = ""
+    parsed_dict = {}
+
+    if request.method == "POST":
+        # 對方以 POST 傳送明碼字串（例如 form 或 raw body）
+        raw_data = request.get_data(as_text=True)
+    elif request.method == "GET":
+        # 如果對方是以 GET 傳送 query string
+        raw_data = request.query_string.decode("utf-8")
+
+    # 使用 urllib 解析明碼為字典
+    parsed_qs = parse_qs(raw_data)
+    parsed_dict = {k: v[0] if len(v) == 1 else v for k, v in parsed_qs.items()}
+
+    html_template = """
+    <h2>收到的原始資料：</h2>
+    <pre>{{ raw_data }}</pre>
+
+    <h2>解析後的 JSON 結構：</h2>
+    <pre>{{ parsed_dict | tojson(indent=2, ensure_ascii=False) }}</pre>
+    """
+
+    return render_template_string(html_template, raw_data=raw_data, parsed_dict=parsed_dict)
+
+if __name__ == "__main__":
+    app.run(debug=True)
+🧪 測試方式（模擬對方送資料過來）
+✅ 測試 1：GET 請求
+網址輸入：
+
+bash
+複製
+編輯
+http://localhost:5000/json_view?account=admin&page=2&start_at=2025-07-01
+會顯示：
+
+json
+複製
+編輯
+{
+  "account": "admin",
+  "page": "2",
+  "start_at": "2025-07-01"
+}
+✅ 測試 2：POST 請求（明碼內容）
+你可以用 curl 或 Postman 模擬對方 POST：
+
+bash
+複製
+編輯
+curl -X POST http://localhost:5000/json_view \
+     -H "Content-Type: application/x-www-form-urlencoded" \
+     --data "account=admin&limit=10&page=5"
+✅ 小結
+功能	說明
+✅ 支援 GET/POST	對方怎麼傳你都能接
+✅ 明碼自動解析	用 parse_qs 處理所有 URL 編碼
+✅ 輸出 JSON 格式視覺化	用 tojson 在 HTML 頁面顯示
