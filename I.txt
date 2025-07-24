@@ -1,0 +1,34 @@
+這是因為 在 Flask 的 tojson 過濾器中，不能用 ensure_ascii=False
+它不是 json.dump()，它不接受 ensure_ascii 的參數。
+
+✅ 解法：把這行 拿掉 ensure_ascii=False
+在你原本的 render_template_string() 裡，應該有這樣一段：
+
+jinja2
+複製
+編輯
+<pre>{{ parsed_dict | tojson(indent=2, ensure_ascii=False) }}</pre>
+👉 請改成這樣：
+jinja2
+複製
+編輯
+<pre>{{ parsed_dict | tojson(indent=2) }}</pre>
+✅ 總整理：修正後的 json_view 函數應該像這樣
+python
+複製
+編輯
+@app.route("/json_view", methods=["GET", "POST"])
+def json_view():
+    raw_data = request.query_string.decode("utf-8")
+    parsed_qs = parse_qs(raw_data)
+    parsed_dict = {k: v[0] if len(v) == 1 else v for k, v in parsed_qs.items()}
+
+    html_template = """
+    <h2>收到的原始資料：</h2>
+    <pre>{{ raw_data }}</pre>
+
+    <h2>解析後的 JSON 結構：</h2>
+    <pre>{{ parsed_dict | tojson(indent=2) }}</pre>
+    """
+
+    return render_template_string(html_template, raw_data=raw_data, parsed_dict=par
