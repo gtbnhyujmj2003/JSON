@@ -1,0 +1,80 @@
+✅ 第一步：後端 Python 程式要傳 parsed_dict 給模板
+請確認你的 Flask @app.route 裡是這樣寫的（你應該已經差不多有了，只是要改成 render_template）：
+
+python
+複製
+編輯
+from flask import Flask, request, render_template
+from urllib.parse import parse_qs
+
+app = Flask(__name__)
+
+@app.route("/json_view", methods=["GET", "POST"])
+def json_view():
+    raw_data = ""
+    parsed_dict = {}
+
+    if request.method == "POST":
+        raw_data = request.get_data(as_text=True)
+    elif request.method == "GET":
+        raw_data = request.query_string.decode("utf-8")
+
+    parsed_qs = parse_qs(raw_data)
+    parsed_dict = {k: v[0] if len(v) == 1 else v for k, v in parsed_qs.items()}
+
+    return render_template("json_view.html", raw_data=raw_data, parsed_dict=parsed_dict)
+✅ 第二步：在 templates/json_view.html 裡面這樣寫
+html
+複製
+編輯
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>JSON View</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        pre { background: #f4f4f4; padding: 10px; }
+        ul { list-style: none; padding: 0; }
+        li { padding: 5px 0; }
+    </style>
+</head>
+<body>
+
+    <h2>收到的原始資料</h2>
+    <pre>{{ raw_data }}</pre>
+
+    <h2>解析後的 key:value</h2>
+    <ul>
+        {% for key, value in parsed_dict.items() %}
+            <li><strong>{{ key }}</strong>: {{ value }}</li>
+        {% else %}
+            <li><em>目前沒有資料</em></li>
+        {% endfor %}
+    </ul>
+
+</body>
+</html>
+✅ 測試
+打開瀏覽器進入：
+
+bash
+複製
+編輯
+http://localhost:5000/json_view?account=admin&page=2&start_at=2025-07-01
+應該會看到：
+
+原始明碼字串（上面一大串 query）
+
+下面一條條解析好的 key:value
+
+🔄 小提醒：Replit 的模板路徑
+在 Replit 上你的 json_view.html 要放在：
+
+css
+複製
+編輯
+📁 your_project/
+├── main.py
+└── templates/
+    └── json_view.html  ← 放這裡！
